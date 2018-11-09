@@ -1,0 +1,22 @@
+[package]
+name = "bloom_filters"
+version = "0.1.0"
+authors = ["quake wang <quake.wang@gmail.com>"]
+
+[dependencies]
+rand = "0.5"
+
+[dev-dependencies]
+criterion = "0.2"
+
+[[bench]]
+name = "insert"
+harness = false
+
+[[bench]]
+name = "contains"
+harness = false
+
+[[bench]]
+name = "false_positives_rate"
+harness = false
