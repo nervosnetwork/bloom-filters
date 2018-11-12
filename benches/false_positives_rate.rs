@@ -11,7 +11,7 @@ use std::collections::hash_map::RandomState;
 
 // This is an empty bench, only print false positives rate
 fn bench(c: &mut Criterion) {
-    let false_positives: usize = (0..100)
+    let false_positives: usize = (0..1000)
         .map(|_| {
             let mut filter = ClassicBloomFilter::new(100, 0.03, RandomState::new());
             let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(100).collect();
@@ -19,17 +19,17 @@ fn bench(c: &mut Criterion) {
             let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(100).collect();
             items.iter().filter(|i| filter.contains(i)).count()
         }).sum();
-    println!("ClassicBloomFilter false positives: {:?}", false_positives as f32 / 10000.0);
+    println!("ClassicBloomFilter false positives: {:?}", false_positives as f32 / 100000.0);
 
     let mut filter = StableBloomFilter::new(100, 2, 0.03, RandomState::new());
-    let false_positives: usize = (0..10000)
+    let false_positives: usize = (0..100000)
         .filter(|_| {
             let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(2).collect();
             filter.insert(&items[0]);
             filter.contains(&items[1])
         }).count();
 
-    println!("StableBloomFilter false_positives: {:?}", false_positives as f32 / 10000.0);
+    println!("StableBloomFilter false_positives: {:?}", false_positives as f32 / 100000.0);
 
     let classic = Fun::new("classic", |b, _| b.iter(|| {}));
 
