@@ -1,3 +1,4 @@
+use std::f64::consts::LN_2;
 use std::mem::size_of;
 
 type Word = usize;
@@ -11,6 +12,10 @@ pub struct Buckets {
 }
 
 impl Buckets {
+    pub fn with_fp_rate(items_count: usize, fp_rate: f64, bucket_size: u8) -> Self {
+        Self::new(compute_m_num(items_count, fp_rate), bucket_size)
+    }
+
     /// Creates a new Buckets with the provided number of buckets where
     /// each bucket is the specified number of bits.
     pub fn new(count: usize, bucket_size: u8) -> Self {
@@ -86,6 +91,16 @@ impl Buckets {
             (self.data[word_index] & (bit_mask << word_offset)) >> word_offset
         }
     }
+}
+
+const LN_2_2: f64 = LN_2 * LN_2;
+
+// Calculates the optimal buckets count, m, based on the number of
+// items and the desired rate of false positives.
+fn compute_m_num(items_count: usize, fp_rate: f64) -> usize {
+    assert!(items_count > 0);
+    assert!(fp_rate > 0.0 && fp_rate < 1.0);
+    ((items_count as f64) * fp_rate.ln().abs() / LN_2_2).ceil() as usize
 }
 
 #[cfg(test)]

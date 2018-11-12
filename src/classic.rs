@@ -1,11 +1,10 @@
 use buckets::Buckets;
 use std::hash::{BuildHasher, Hash};
-use {compute_k_num, compute_m_num, hash_kernals, BloomFilter};
+use {BloomFilter, DoubleHashing, HashKernals};
 
 pub struct Filter<BH> {
-    buckets: Buckets, // filter data
-    build_hasher: BH, // a hash function builder
-    k: usize,         // number of hash functions
+    buckets: Buckets,                // filter data
+    hash_kernals: DoubleHashing<BH>, // a hash function builder
 }
 
 impl<BH: BuildHasher> Filter<BH> {
@@ -13,31 +12,19 @@ impl<BH: BuildHasher> Filter<BH> {
     /// items_count is an estimation of the maximum number of items to store.
     /// fp_rate is the wanted rate of false positives, in ]0.0, 1.0[
     pub fn new(items_count: usize, fp_rate: f64, build_hasher: BH) -> Self {
-        Self {
-            buckets: Buckets::new(compute_m_num(items_count, fp_rate), 1),
-            build_hasher,
-            k: compute_k_num(fp_rate),
-        }
+        let buckets = Buckets::with_fp_rate(items_count, fp_rate, 1);
+        let hash_kernals = DoubleHashing::with_fp_rate(fp_rate, buckets.len(), build_hasher);
+        Self { buckets, hash_kernals }
     }
 }
 
 impl<BH: BuildHasher> BloomFilter for Filter<BH> {
     fn insert<T: Hash>(&mut self, item: &T) {
-        let (lo, hi) = hash_kernals(item, &mut self.build_hasher.build_hasher());
-        let (lo, hi) = (lo as usize, hi as usize);
-        (0..self.k).for_each(|i| {
-            let offset = lo.wrapping_add(hi.wrapping_mul(i)) % self.buckets.len();
-            self.buckets.set(offset, 1);
-        })
+        self.hash_kernals.hash_iter(item).for_each(|i| self.buckets.set(i, 1))
     }
 
     fn contains<T: Hash>(&self, item: &T) -> bool {
-        let (lo, hi) = hash_kernals(item, &mut self.build_hasher.build_hasher());
-        let (lo, hi) = (lo as usize, hi as usize);
-        (0..self.k).all(|i| {
-            let offset = lo.wrapping_add(hi.wrapping_mul(i)) % self.buckets.len();
-            self.buckets.get(offset) == 1
-        })
+        self.hash_kernals.hash_iter(item).all(|i| self.buckets.get(i) == 1)
     }
 
     fn reset(&mut self) {

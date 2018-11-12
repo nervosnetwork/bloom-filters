@@ -1,13 +1,13 @@
 use buckets::Buckets;
+use hash::compute_k_num;
 use rand::random;
 use std::hash::{BuildHasher, Hash};
-use {compute_k_num, hash_kernals, BloomFilter};
+use {BloomFilter, DoubleHashing, HashKernals};
 
 pub struct Filter<BH> {
-    buckets: Buckets, // filter data
-    build_hasher: BH, // a hash function builder
-    k: usize,         // number of hash functions
-    p: usize,         // number of buckets to decrement,
+    buckets: Buckets,                // filter data
+    hash_kernals: DoubleHashing<BH>, // a hash function builder
+    p: usize,                        // number of buckets to decrement,
 }
 
 impl<BH: BuildHasher> Filter<BH> {
@@ -21,10 +21,12 @@ impl<BH: BuildHasher> Filter<BH> {
             k = 1
         }
 
+        let buckets = Buckets::new(m, d);
+        let hash_kernals = DoubleHashing::with_k(k, buckets.len(), build_hasher);
+
         Self {
-            buckets: Buckets::new(m, d),
-            build_hasher,
-            k,
+            buckets,
+            hash_kernals,
             p: compute_p_num(m, k, d, fp_rate),
         }
     }
@@ -56,22 +58,12 @@ fn compute_p_num(m: usize, k: usize, d: u8, fp_rate: f64) -> usize {
 impl<BH: BuildHasher> BloomFilter for Filter<BH> {
     fn insert<T: Hash>(&mut self, item: &T) {
         self.decrement();
-        let (lo, hi) = hash_kernals(item, &mut self.build_hasher.build_hasher());
-        let (lo, hi) = (lo as usize, hi as usize);
         let max = self.buckets.max_value();
-        (0..self.k).for_each(|i| {
-            let offset = lo.wrapping_add(hi.wrapping_mul(i)) % self.buckets.len();
-            self.buckets.set(offset, max);
-        })
+        self.hash_kernals.hash_iter(item).for_each(|i| self.buckets.set(i, max))
     }
 
     fn contains<T: Hash>(&self, item: &T) -> bool {
-        let (lo, hi) = hash_kernals(item, &mut self.build_hasher.build_hasher());
-        let (lo, hi) = (lo as usize, hi as usize);
-        (0..self.k).all(|i| {
-            let offset = lo.wrapping_add(hi.wrapping_mul(i)) % self.buckets.len();
-            self.buckets.get(offset) > 0
-        })
+        self.hash_kernals.hash_iter(item).all(|i| self.buckets.get(i) > 0)
     }
 
     fn reset(&mut self) {
