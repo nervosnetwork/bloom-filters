@@ -16,6 +16,16 @@ impl<BH: BuildHasher> Filter<BH> {
         let hash_kernals = DoubleHashing::with_fp_rate(fp_rate, buckets.len(), build_hasher);
         Self { buckets, hash_kernals }
     }
+
+    pub fn with_raw_data(raw_data: &[u8], k: usize, build_hasher: BH) -> Self {
+        let buckets = Buckets::with_raw_data(raw_data.len() * 8, 1, raw_data);
+        let hash_kernals = DoubleHashing::with_k(k, buckets.len(), build_hasher);
+        Self { buckets, hash_kernals }
+    }
+
+    pub fn buckets(&self) -> &Buckets {
+        &self.buckets
+    }
 }
 
 impl<BH: BuildHasher> BloomFilter for Filter<BH> {
@@ -35,6 +45,7 @@ impl<BH: BuildHasher> BloomFilter for Filter<BH> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hash::DefaultBuildHasher;
     use rand::distributions::Standard;
     use rand::{thread_rng, Rng};
     use std::collections::hash_map::RandomState;
@@ -45,6 +56,19 @@ mod tests {
         let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(16).collect();
         assert!(items.iter().all(|i| !filter.contains(i)));
         items.iter().for_each(|i| filter.insert(i));
+        assert!(items.iter().all(|i| filter.contains(i)));
+    }
+
+    #[test]
+    fn raw_data() {
+        let data = vec![0; 8];
+        let mut filter = Filter::with_raw_data(&data, 2, DefaultBuildHasher);
+        let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(8).collect();
+        assert!(items.iter().all(|i| !filter.contains(i)));
+        items.iter().for_each(|i| filter.insert(i));
+
+        let data = filter.buckets().raw_data();
+        let filter = Filter::with_raw_data(&data, 2, DefaultBuildHasher);
         assert!(items.iter().all(|i| filter.contains(i)));
     }
 }
