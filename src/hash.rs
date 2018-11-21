@@ -1,3 +1,4 @@
+use std::collections::hash_map::DefaultHasher;
 use std::hash::{BuildHasher, Hash, Hasher};
 
 // Calculates the optimal number of hash functions to use for a Bloom
@@ -64,5 +65,15 @@ impl Iterator for DoubleHashingIter {
         let r = self.h1.wrapping_add(self.h2.wrapping_mul(self.counter)) % self.n;
         self.counter += 1;
         Some(r)
+    }
+}
+
+pub struct DefaultBuildHasher;
+
+impl BuildHasher for DefaultBuildHasher {
+    type Hasher = DefaultHasher;
+
+    fn build_hasher(&self) -> DefaultHasher {
+        DefaultHasher::new()
     }
 }
