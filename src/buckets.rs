@@ -95,7 +95,7 @@ impl Buckets {
     }
 
     pub fn increment(&mut self, bucket: usize, delta: i8) {
-        let v = self.get(bucket) as i8 + delta;
+        let v = (self.get(bucket) as i8).saturating_add(delta);
         let value = if v < 0 {
             0u8
         } else if v > self.max as i8 {
@@ -211,6 +211,13 @@ mod tests {
         assert_eq!(6, buckets.get(10));
         buckets.increment(10, -10);
         assert_eq!(0, buckets.get(10));
+
+        // test overflow
+        let mut buckets = Buckets::new(3, 7);
+        buckets.increment(0,127);
+        assert_eq!(127, buckets.get(0));
+        buckets.increment(0,1);
+        assert_eq!(127, buckets.get(0));
     }
 
     #[test]
