@@ -1,13 +1,13 @@
-use buckets::Buckets;
-use hash::compute_k_num;
+use crate::buckets::Buckets;
+use crate::hash::compute_k_num;
+use crate::{BloomFilter, DefaultHashKernals, HashKernals};
 use rand::random;
 use std::hash::{BuildHasher, Hash};
-use {BloomFilter, DoubleHashing, HashKernals};
 
 pub struct Filter<BH> {
-    buckets: Buckets,                // filter data
-    hash_kernals: DoubleHashing<BH>, // a hash function builder
-    p: usize,                        // number of buckets to decrement,
+    buckets: Buckets,                     // filter data
+    hash_kernals: DefaultHashKernals<BH>, // a hash function builder
+    p: usize,                             // number of buckets to decrement,
 }
 
 impl<BH: BuildHasher> Filter<BH> {
@@ -22,7 +22,7 @@ impl<BH: BuildHasher> Filter<BH> {
         }
 
         let buckets = Buckets::new(m, d);
-        let hash_kernals = DoubleHashing::with_k(k, buckets.len(), build_hasher);
+        let hash_kernals = DefaultHashKernals::with_k(k, buckets.len(), build_hasher);
 
         Self {
             buckets,
