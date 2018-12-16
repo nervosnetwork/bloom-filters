@@ -1,10 +1,10 @@
-use buckets::Buckets;
+use crate::buckets::Buckets;
+use crate::{BloomFilter, DefaultHashKernals, HashKernals};
 use std::hash::{BuildHasher, Hash};
-use {BloomFilter, DoubleHashing, HashKernals};
 
 pub struct Filter<BH> {
-    buckets: Buckets,                // filter data
-    hash_kernals: DoubleHashing<BH>, // a hash function builder
+    buckets: Buckets,                     // filter data
+    hash_kernals: DefaultHashKernals<BH>, // a hash function builder
 }
 
 impl<BH: BuildHasher> Filter<BH> {
@@ -13,13 +13,13 @@ impl<BH: BuildHasher> Filter<BH> {
     /// fp_rate is the wanted rate of false positives, in ]0.0, 1.0[
     pub fn new(items_count: usize, fp_rate: f64, build_hasher: BH) -> Self {
         let buckets = Buckets::with_fp_rate(items_count, fp_rate, 1);
-        let hash_kernals = DoubleHashing::with_fp_rate(fp_rate, buckets.len(), build_hasher);
+        let hash_kernals = DefaultHashKernals::with_fp_rate(fp_rate, buckets.len(), build_hasher);
         Self { buckets, hash_kernals }
     }
 
     pub fn with_raw_data(raw_data: &[u8], k: usize, build_hasher: BH) -> Self {
         let buckets = Buckets::with_raw_data(raw_data.len() * 8, 1, raw_data);
-        let hash_kernals = DoubleHashing::with_k(k, buckets.len(), build_hasher);
+        let hash_kernals = DefaultHashKernals::with_k(k, buckets.len(), build_hasher);
         Self { buckets, hash_kernals }
     }
 
@@ -45,7 +45,7 @@ impl<BH: BuildHasher> BloomFilter for Filter<BH> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hash::DefaultBuildHasher;
+    use crate::hash::DefaultBuildHasher;
     use rand::distributions::Standard;
     use rand::{thread_rng, Rng};
     use std::collections::hash_map::RandomState;

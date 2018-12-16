@@ -18,7 +18,8 @@ fn bench(c: &mut Criterion) {
             items.iter().for_each(|i| filter.insert(i));
             let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(100).collect();
             items.iter().filter(|i| filter.contains(i)).count()
-        }).sum();
+        })
+        .sum();
     println!("ClassicBloomFilter false positives: {:?}", false_positives as f32 / 100000.0);
 
     let mut filter = StableBloomFilter::new(100, 2, 0.03, RandomState::new());
@@ -27,7 +28,8 @@ fn bench(c: &mut Criterion) {
             let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(2).collect();
             filter.insert(&items[0]);
             filter.contains(&items[1])
-        }).count();
+        })
+        .count();
 
     println!("StableBloomFilter false_positives: {:?}", false_positives as f32 / 100000.0);
 

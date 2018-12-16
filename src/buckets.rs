@@ -42,7 +42,8 @@ impl Buckets {
                     copy_nonoverlapping(buf.as_ptr(), d_slice, BYTES_PER_WORD);
                     (*(d_slice as *const Word)).to_le()
                 }
-            }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
 
         Self {
             data,

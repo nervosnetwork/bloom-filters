@@ -1,10 +1,10 @@
-use buckets::Buckets;
+use crate::buckets::Buckets;
+use crate::{BloomFilter, DefaultHashKernals, HashKernals, RemovableBloomFilter};
 use std::hash::{BuildHasher, Hash};
-use {BloomFilter, DoubleHashing, HashKernals, RemovableBloomFilter};
 
 pub struct Filter<BH> {
-    buckets: Buckets,                // filter data
-    hash_kernals: DoubleHashing<BH>, // a hash function builder
+    buckets: Buckets,                     // filter data
+    hash_kernals: DefaultHashKernals<BH>, // a hash function builder
 }
 
 impl<BH: BuildHasher> Filter<BH> {
@@ -14,7 +14,7 @@ impl<BH: BuildHasher> Filter<BH> {
     /// fp_rate is the wanted rate of false positives, in ]0.0, 1.0[
     pub fn new(items_count: usize, bucket_size: u8, fp_rate: f64, build_hasher: BH) -> Self {
         let buckets = Buckets::with_fp_rate(items_count, fp_rate, bucket_size);
-        let hash_kernals = DoubleHashing::with_fp_rate(fp_rate, buckets.len(), build_hasher);
+        let hash_kernals = DefaultHashKernals::with_fp_rate(fp_rate, buckets.len(), build_hasher);
         Self { buckets, hash_kernals }
     }
 }

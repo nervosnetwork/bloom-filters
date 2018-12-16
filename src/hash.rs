@@ -8,18 +8,18 @@ pub fn compute_k_num(fp_rate: f64) -> usize {
     fp_rate.log2().abs().ceil() as usize
 }
 
-pub trait HashKernals {
+pub trait HashKernals<H> {
     type HI: Iterator<Item = usize>;
-    fn hash_iter<T: Hash>(&self, item: &T) -> Self::HI;
+    fn hash_iter(&self, item: &H) -> Self::HI;
 }
 
-pub struct DoubleHashing<BH> {
+pub struct DefaultHashKernals<BH> {
     k: usize,
     n: usize,
     build_hasher: BH,
 }
 
-impl<BH: BuildHasher> DoubleHashing<BH> {
+impl<BH: BuildHasher> DefaultHashKernals<BH> {
     pub fn with_fp_rate(fp_rate: f64, n: usize, build_hasher: BH) -> Self {
         Self::with_k(compute_k_num(fp_rate), n, build_hasher)
     }
@@ -29,25 +29,19 @@ impl<BH: BuildHasher> DoubleHashing<BH> {
     }
 }
 
-impl<BH: BuildHasher> HashKernals for DoubleHashing<BH> {
-    type HI = DoubleHashingIter;
+impl<H: Hash, BH: BuildHasher> HashKernals<H> for DefaultHashKernals<BH> {
+    type HI = DefaultHashIter;
 
-    fn hash_iter<T: Hash>(&self, item: &T) -> Self::HI {
+    fn hash_iter(&self, item: &H) -> Self::HI {
         let hasher = &mut self.build_hasher.build_hasher();
         item.hash(hasher);
         let result = hasher.finish();
 
-        DoubleHashingIter {
-            h1: (result as u32) as usize,
-            h2: (result >> 32) as usize,
-            k: self.k,
-            n: self.n,
-            counter: 0,
-        }
+        DefaultHashIter::new(result, self.k, self.n)
     }
 }
 
-pub struct DoubleHashingIter {
+pub struct DefaultHashIter {
     h1: usize,
     h2: usize,
     k: usize,
@@ -55,7 +49,19 @@ pub struct DoubleHashingIter {
     counter: usize,
 }
 
-impl Iterator for DoubleHashingIter {
+impl DefaultHashIter {
+    fn new(hash: u64, k: usize, n: usize) -> Self {
+        Self {
+            h1: (hash as u32) as usize,
+            h2: (hash >> 32) as usize,
+            k,
+            n,
+            counter: 0,
+        }
+    }
+}
+
+impl Iterator for DefaultHashIter {
     type Item = usize;
 
     fn next(&mut self) -> Option<usize> {
