@@ -8,36 +8,69 @@ pub fn compute_k_num(fp_rate: f64) -> usize {
     fp_rate.log2().abs().ceil() as usize
 }
 
-pub trait HashKernals<H> {
+/// A trait for creating hash iterator of item.
+pub trait HashKernals {
     type HI: Iterator<Item = usize>;
-    fn hash_iter(&self, item: &H) -> Self::HI;
+
+    fn hash_iter<T: Hash>(&self, item: &T) -> Self::HI;
 }
 
-pub struct DefaultHashKernals<BH> {
-    k: usize,
-    n: usize,
+/// A trait for creating instances of [`HashKernals`].
+pub trait BuildHashKernals
+where
+    Self: Sized,
+{
+    type HK: HashKernals;
+
+    fn with_fp_rate(self, fp_rate: f64, n: usize) -> Self::HK {
+        self.with_k(compute_k_num(fp_rate), n)
+    }
+
+    fn with_k(self, k: usize, n: usize) -> Self::HK;
+}
+
+/// Used to create a DefaultHashKernals instance.
+pub struct DefaultBuildHashKernals<BH> {
+    hash_seed: usize,
     build_hasher: BH,
 }
 
-impl<BH: BuildHasher> DefaultHashKernals<BH> {
-    pub fn with_fp_rate(fp_rate: f64, n: usize, build_hasher: BH) -> Self {
-        Self::with_k(compute_k_num(fp_rate), n, build_hasher)
-    }
-
-    pub fn with_k(k: usize, n: usize, build_hasher: BH) -> Self {
-        Self { k, n, build_hasher }
+impl<BH: BuildHasher> DefaultBuildHashKernals<BH> {
+    pub fn new(hash_seed: usize, build_hasher: BH) -> Self {
+        Self { hash_seed, build_hasher }
     }
 }
 
-impl<H: Hash, BH: BuildHasher> HashKernals<H> for DefaultHashKernals<BH> {
+impl<BH: BuildHasher> BuildHashKernals for DefaultBuildHashKernals<BH> {
+    type HK = DefaultHashKernals<BH>;
+
+    fn with_k(self, k: usize, n: usize) -> Self::HK {
+        Self::HK {
+            k,
+            n,
+            hash_seed: self.hash_seed,
+            build_hasher: self.build_hasher,
+        }
+    }
+}
+
+/// A default implementation of [Kirsch-Mitzenmacher-Optimization](https://www.eecs.harvard.edu/~michaelm/postscripts/tr-02-05.pdf) hash function
+pub struct DefaultHashKernals<BH> {
+    k: usize,         // numbers of hash iterating
+    n: usize,         // filter size
+    hash_seed: usize, // seed offset for anonymity and privacy purpose
+    build_hasher: BH,
+}
+
+impl<BH: BuildHasher> HashKernals for DefaultHashKernals<BH> {
     type HI = DefaultHashIter;
 
-    fn hash_iter(&self, item: &H) -> Self::HI {
+    fn hash_iter<T: Hash>(&self, item: &T) -> Self::HI {
         let hasher = &mut self.build_hasher.build_hasher();
         item.hash(hasher);
         let result = hasher.finish();
 
-        DefaultHashIter::new(result, self.k, self.n)
+        DefaultHashIter::new(result, self.k, self.n, self.hash_seed)
     }
 }
 
@@ -46,16 +79,18 @@ pub struct DefaultHashIter {
     h2: usize,
     k: usize,
     n: usize,
+    hash_seed: usize,
     counter: usize,
 }
 
 impl DefaultHashIter {
-    fn new(hash: u64, k: usize, n: usize) -> Self {
+    fn new(hash: u64, k: usize, n: usize, hash_seed: usize) -> Self {
         Self {
             h1: (hash as u32) as usize,
             h2: (hash >> 32) as usize,
             k,
             n,
+            hash_seed,
             counter: 0,
         }
     }
@@ -68,7 +103,11 @@ impl Iterator for DefaultHashIter {
         if self.k == self.counter {
             return None;
         }
-        let r = self.h1.wrapping_add(self.h2.wrapping_mul(self.counter)) % self.n;
+        let r = self
+            .hash_seed
+            .wrapping_add(self.h1)
+            .wrapping_add(self.h2.wrapping_mul(self.counter))
+            % self.n;
         self.counter += 1;
         Some(r)
     }

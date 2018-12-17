@@ -1,19 +1,19 @@
 use crate::buckets::Buckets;
 use crate::hash::compute_k_num;
-use crate::{BloomFilter, DefaultHashKernals, HashKernals};
+use crate::{BloomFilter, BuildHashKernals, HashKernals};
 use rand::random;
-use std::hash::{BuildHasher, Hash};
+use std::hash::Hash;
 
-pub struct Filter<BH> {
-    buckets: Buckets,                     // filter data
-    hash_kernals: DefaultHashKernals<BH>, // a hash function builder
-    p: usize,                             // number of buckets to decrement,
+pub struct Filter<BHK: BuildHashKernals> {
+    buckets: Buckets,      // filter data
+    hash_kernals: BHK::HK, // hash kernals
+    p: usize,              // number of buckets to decrement,
 }
 
-impl<BH: BuildHasher> Filter<BH> {
+impl<BHK: BuildHashKernals> Filter<BHK> {
     /// Creates a new Stable Bloom Filter with m buckets and d
     /// bits allocated per bucket optimized for the target false-positive rate.
-    pub fn new(m: usize, d: u8, fp_rate: f64, build_hasher: BH) -> Self {
+    pub fn new(m: usize, d: u8, fp_rate: f64, build_hash_kernals: BHK) -> Self {
         let mut k = compute_k_num(fp_rate);
         if k > m {
             k = m
@@ -22,7 +22,7 @@ impl<BH: BuildHasher> Filter<BH> {
         }
 
         let buckets = Buckets::new(m, d);
-        let hash_kernals = DefaultHashKernals::with_k(k, buckets.len(), build_hasher);
+        let hash_kernals = build_hash_kernals.with_k(k, buckets.len());
 
         Self {
             buckets,
@@ -55,7 +55,7 @@ fn compute_p_num(m: usize, k: usize, d: u8, fp_rate: f64) -> usize {
     }
 }
 
-impl<BH: BuildHasher> BloomFilter for Filter<BH> {
+impl<BHK: BuildHashKernals> BloomFilter for Filter<BHK> {
     fn insert<T: Hash>(&mut self, item: &T) {
         self.decrement();
         let max = self.buckets.max_value();
@@ -74,14 +74,15 @@ impl<BH: BuildHasher> BloomFilter for Filter<BH> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hash::DefaultBuildHashKernals;
     use rand::distributions::Standard;
-    use rand::{thread_rng, Rng};
+    use rand::{random, thread_rng, Rng};
     use std::collections::hash_map::RandomState;
 
     #[test]
     fn contains() {
         // d = 3, max = (1 << d) - 1
-        let mut filter = Filter::new(100, 3, 0.03, RandomState::new());
+        let mut filter = Filter::new(100, 3, 0.03, DefaultBuildHashKernals::new(random(), RandomState::new()));
         let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();
         assert!(items.iter().all(|i| !filter.contains(i)));
         items.iter().for_each(|i| filter.insert(i));
