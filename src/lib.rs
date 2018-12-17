@@ -20,3 +20,8 @@ pub trait BloomFilter {
 pub trait RemovableBloomFilter {
     fn remove<T: Hash>(&mut self, item: &T);
 }
+
+pub trait UpdatableBloomFilter {
+    /// Update filter internal buckets with `raw_data` via `BitOr` operation
+    fn update(&mut self, raw_data: &[u8]);
+}

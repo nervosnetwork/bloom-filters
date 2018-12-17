@@ -1,5 +1,5 @@
 use crate::buckets::Buckets;
-use crate::{BloomFilter, BuildHashKernals, HashKernals};
+use crate::{BloomFilter, BuildHashKernals, HashKernals, UpdatableBloomFilter};
 use std::hash::Hash;
 
 pub struct Filter<BHK: BuildHashKernals> {
@@ -42,6 +42,12 @@ impl<BHK: BuildHashKernals> BloomFilter for Filter<BHK> {
     }
 }
 
+impl<BHK: BuildHashKernals> UpdatableBloomFilter for Filter<BHK> {
+    fn update(&mut self, raw_data: &[u8]) {
+        self.buckets.update(raw_data)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -71,5 +77,23 @@ mod tests {
         let data = filter.buckets().raw_data();
         let filter = Filter::with_raw_data(&data, 2, DefaultBuildHashKernals::new(hash_seed, DefaultBuildHasher));
         assert!(items.iter().all(|i| filter.contains(i)));
+    }
+
+    #[test]
+    fn update() {
+        let data = vec![0; 8];
+        let hash_seed = random();
+
+        let mut filter1 = Filter::with_raw_data(&data, 2, DefaultBuildHashKernals::new(hash_seed, DefaultBuildHasher));
+        let items1: Vec<usize> = thread_rng().sample_iter(&Standard).take(8).collect();
+        items1.iter().for_each(|i| filter1.insert(i));
+
+        let mut filter2 = Filter::with_raw_data(&data, 2, DefaultBuildHashKernals::new(hash_seed, DefaultBuildHasher));
+        let items2: Vec<usize> = thread_rng().sample_iter(&Standard).take(8).collect();
+        items2.iter().for_each(|i| filter2.insert(i));
+
+        filter1.update(&filter2.buckets().raw_data());
+        assert!(items1.iter().all(|i| filter1.contains(i)));
+        assert!(items2.iter().all(|i| filter1.contains(i)));
     }
 }
