@@ -72,7 +72,7 @@ impl Buckets {
             .zip(raw_data.chunks(BYTES_PER_WORD))
             .map(|(word, bytes)| {
                 bytes.iter().enumerate().fold(*word, |acc, (offset, byte)| {
-                    acc | ((*byte as Word) << offset * BYTES_PER_WORD)
+                    acc | (*byte as Word) << (offset * BYTES_PER_WORD)
                 })
             })
             .collect::<Vec<_>>();
