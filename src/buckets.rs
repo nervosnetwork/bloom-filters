@@ -65,6 +65,21 @@ impl Buckets {
         result
     }
 
+    pub fn update(&mut self, raw_data: &[u8]) {
+        let new_data = self
+            .data
+            .iter()
+            .zip(raw_data.chunks(BYTES_PER_WORD))
+            .map(|(word, bytes)| {
+                bytes.iter().enumerate().fold(*word, |acc, (offset, byte)| {
+                    acc | ((*byte as Word) << offset * BYTES_PER_WORD)
+                })
+            })
+            .collect::<Vec<_>>();
+
+        self.data = new_data;
+    }
+
     #[inline(always)]
     pub fn len(&self) -> usize {
         self.count
@@ -234,5 +249,27 @@ mod tests {
         assert_eq!(4, buckets.get(11));
         assert_eq!(5, buckets.get(20));
         assert_eq!(6, buckets.get(21));
+    }
+
+    #[test]
+    fn update() {
+        let mut b1 = Buckets::new(100, 1);
+        b1.set(0, 1);
+        b1.set(20, 1);
+        b1.set(63, 1);
+
+        let mut b2 = Buckets::new(50, 1);
+        b2.set(7, 1);
+        b2.set(20, 1);
+        b2.set(21, 1);
+        b2.set(49, 1);
+
+        b1.update(&b2.raw_data());
+        assert_eq!(1, b1.get(0));
+        assert_eq!(0, b1.get(1));
+        assert_eq!(1, b1.get(20));
+        assert_eq!(1, b1.get(21));
+        assert_eq!(1, b1.get(49));
+        assert_eq!(1, b1.get(63));
     }
 }
