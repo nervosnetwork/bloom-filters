@@ -75,17 +75,22 @@ impl<BHK: BuildHashKernals> BloomFilter for Filter<BHK> {
 mod tests {
     use super::*;
     use crate::hash::DefaultBuildHashKernals;
-    use rand::distributions::Standard;
-    use rand::{random, thread_rng, Rng};
+    use proptest::{collection::size_range, prelude::any_with, proptest, proptest_helper};
+    use rand::random;
     use std::collections::hash_map::RandomState;
 
-    #[test]
-    fn contains() {
+    fn _contains(items: &[usize]) {
         // d = 3, max = (1 << d) - 1
         let mut filter = Filter::new(100, 3, 0.03, DefaultBuildHashKernals::new(random(), RandomState::new()));
-        let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();
         assert!(items.iter().all(|i| !filter.contains(i)));
         items.iter().for_each(|i| filter.insert(i));
         assert!(items.iter().all(|i| filter.contains(i)));
+    }
+
+    proptest! {
+        #[test]
+        fn contains(ref items in any_with::<Vec<usize>>(size_range(7).lift())) {
+            _contains(items)
+        }
     }
 }

@@ -6,10 +6,11 @@ authors = ["Nervos Core Dev <dev@nervos.org>"]
 edition = "2018"
 
 [dependencies]
-rand = "0.5"
+rand = "0.6"
 
 [dev-dependencies]
 criterion = "0.2"
+proptest = "0.8"
 
 [[bench]]
 name = "insert"
