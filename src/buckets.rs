@@ -21,7 +21,7 @@ impl Buckets {
     /// Creates a new Buckets with the provided number of buckets where
     /// each bucket is the specified number of bits.
     pub fn new(count: usize, bucket_size: u8) -> Self {
-        assert!(bucket_size < 8);
+        debug_assert!(bucket_size < 8);
         Self {
             data: vec![0; (count * bucket_size as usize + BITS_PER_WORD - 1) / BITS_PER_WORD],
             count,
@@ -150,8 +150,8 @@ const LN_2_2: f64 = LN_2 * LN_2;
 // Calculates the optimal buckets count, m, based on the number of
 // items and the desired rate of false positives.
 fn compute_m_num(items_count: usize, fp_rate: f64) -> usize {
-    assert!(items_count > 0);
-    assert!(fp_rate > 0.0 && fp_rate < 1.0);
+    debug_assert!(items_count > 0);
+    debug_assert!(fp_rate > 0.0 && fp_rate < 1.0);
     ((items_count as f64) * fp_rate.ln().abs() / LN_2_2).ceil() as usize
 }
 
