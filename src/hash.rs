@@ -4,7 +4,7 @@ use std::hash::{BuildHasher, Hash, Hasher};
 // Calculates the optimal number of hash functions to use for a Bloom
 // filter based on the desired rate of false positives.
 pub fn compute_k_num(fp_rate: f64) -> usize {
-    assert!(fp_rate > 0.0 && fp_rate < 1.0);
+    debug_assert!(fp_rate > 0.0 && fp_rate < 1.0);
     fp_rate.log2().abs().ceil() as usize
 }
 
