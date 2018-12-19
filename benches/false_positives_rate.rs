@@ -1,10 +1,5 @@
-extern crate bloom_filters;
-extern crate rand;
-#[macro_use]
-extern crate criterion;
-
 use bloom_filters::{BloomFilter, ClassicBloomFilter, DefaultBuildHashKernals, StableBloomFilter};
-use criterion::{Criterion, Fun};
+use criterion::{criterion_group, criterion_main, Criterion, Fun};
 use rand::distributions::Standard;
 use rand::{random, thread_rng, Rng};
 use std::collections::hash_map::RandomState;
