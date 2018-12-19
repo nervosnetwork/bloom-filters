@@ -214,9 +214,9 @@ mod tests {
 
         // test overflow
         let mut buckets = Buckets::new(3, 7);
-        buckets.increment(0,127);
+        buckets.increment(0, 127);
         assert_eq!(127, buckets.get(0));
-        buckets.increment(0,1);
+        buckets.increment(0, 1);
         assert_eq!(127, buckets.get(0));
     }
 

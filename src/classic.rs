@@ -52,48 +52,64 @@ impl<BHK: BuildHashKernals> UpdatableBloomFilter for Filter<BHK> {
 mod tests {
     use super::*;
     use crate::hash::{DefaultBuildHashKernals, DefaultBuildHasher};
-    use rand::distributions::Standard;
-    use rand::{random, thread_rng, Rng};
+    use proptest::{collection::size_range, prelude::any_with, proptest, proptest_helper};
+    use rand::random;
     use std::collections::hash_map::RandomState;
 
-    #[test]
-    fn contains() {
+    fn _contains(items: &[usize]) {
         let mut filter = Filter::new(100, 0.03, DefaultBuildHashKernals::new(random(), RandomState::new()));
-        let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(16).collect();
         assert!(items.iter().all(|i| !filter.contains(i)));
         items.iter().for_each(|i| filter.insert(i));
         assert!(items.iter().all(|i| filter.contains(i)));
     }
 
-    #[test]
-    fn raw_data() {
+    proptest! {
+        #[test]
+        fn contains(ref items in any_with::<Vec<usize>>(size_range(16).lift())) {
+            _contains(items)
+        }
+    }
+
+    fn _raw_data(items: &[usize]) {
         let data = vec![0; 8];
         let hash_seed = random();
         let mut filter = Filter::with_raw_data(&data, 2, DefaultBuildHashKernals::new(hash_seed, DefaultBuildHasher));
-        let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(8).collect();
         assert!(items.iter().all(|i| !filter.contains(i)));
         items.iter().for_each(|i| filter.insert(i));
-
         let data = filter.buckets().raw_data();
         let filter = Filter::with_raw_data(&data, 2, DefaultBuildHashKernals::new(hash_seed, DefaultBuildHasher));
         assert!(items.iter().all(|i| filter.contains(i)));
     }
 
-    #[test]
-    fn update() {
+    proptest! {
+        #[test]
+        fn raw_data(ref items in any_with::<Vec<usize>>(size_range(8).lift())) {
+            _raw_data(items)
+        }
+    }
+
+    fn _update(items1: &[usize], items2: &[usize]) {
         let data = vec![0; 8];
         let hash_seed = random();
 
         let mut filter1 = Filter::with_raw_data(&data, 2, DefaultBuildHashKernals::new(hash_seed, DefaultBuildHasher));
-        let items1: Vec<usize> = thread_rng().sample_iter(&Standard).take(8).collect();
         items1.iter().for_each(|i| filter1.insert(i));
 
         let mut filter2 = Filter::with_raw_data(&data, 2, DefaultBuildHashKernals::new(hash_seed, DefaultBuildHasher));
-        let items2: Vec<usize> = thread_rng().sample_iter(&Standard).take(8).collect();
         items2.iter().for_each(|i| filter2.insert(i));
 
         filter1.update(&filter2.buckets().raw_data());
         assert!(items1.iter().all(|i| filter1.contains(i)));
         assert!(items2.iter().all(|i| filter1.contains(i)));
+    }
+
+    proptest! {
+        #[test]
+        fn update(
+            ref items1 in any_with::<Vec<usize>>(size_range(8).lift()),
+            ref items2 in any_with::<Vec<usize>>(size_range(8).lift())
+        ) {
+            _update(items1, items2)
+        }
     }
 }

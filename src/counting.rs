@@ -43,25 +43,35 @@ impl<BHK: BuildHashKernals> RemovableBloomFilter for Filter<BHK> {
 mod tests {
     use super::*;
     use crate::hash::DefaultBuildHashKernals;
-    use rand::distributions::Standard;
-    use rand::{random, thread_rng, Rng};
+    use proptest::{collection::size_range, prelude::any, prelude::any_with, proptest, proptest_helper};
+    use rand::random;
     use std::collections::hash_map::RandomState;
 
-    #[test]
-    fn contains() {
+    fn _contains(items: &[usize]) {
         let mut filter = Filter::new(100, 4, 0.03, DefaultBuildHashKernals::new(random(), RandomState::new()));
-        let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(16).collect();
         assert!(items.iter().all(|i| !filter.contains(i)));
         items.iter().for_each(|i| filter.insert(i));
         assert!(items.iter().all(|i| filter.contains(i)));
     }
 
-    #[test]
-    fn remove() {
+    proptest! {
+        #[test]
+        fn contains(ref items in any_with::<Vec<usize>>(size_range(16).lift())) {
+            _contains(items)
+        }
+    }
+
+    fn _remove(item: usize) {
         let mut filter = Filter::new(100, 4, 0.03, DefaultBuildHashKernals::new(random(), RandomState::new()));
-        let item: usize = thread_rng().gen();
         filter.insert(&item);
         filter.remove(&item);
         assert!(!filter.contains(&item));
+    }
+
+    proptest! {
+        #[test]
+        fn remove(items in any::<usize>()) {
+            _remove(items)
+        }
     }
 }
