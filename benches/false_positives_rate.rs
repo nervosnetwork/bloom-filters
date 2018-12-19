@@ -1,4 +1,4 @@
-use bloom_filters::{BloomFilter, ClassicBloomFilter, DefaultBuildHashKernals, StableBloomFilter};
+use bloom_filters::{BloomFilter, ClassicBloomFilter, DefaultBuildHashKernels, StableBloomFilter};
 use criterion::{criterion_group, criterion_main, Criterion, Fun};
 use rand::distributions::Standard;
 use rand::{random, thread_rng, Rng};
@@ -8,7 +8,7 @@ use std::collections::hash_map::RandomState;
 fn bench(c: &mut Criterion) {
     let false_positives: usize = (0..1000)
         .map(|_| {
-            let mut filter = ClassicBloomFilter::new(100, 0.03, DefaultBuildHashKernals::new(random(), RandomState::new()));
+            let mut filter = ClassicBloomFilter::new(100, 0.03, DefaultBuildHashKernels::new(random(), RandomState::new()));
             let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(100).collect();
             items.iter().for_each(|i| filter.insert(i));
             let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(100).collect();
@@ -17,7 +17,7 @@ fn bench(c: &mut Criterion) {
         .sum();
     println!("ClassicBloomFilter false positives: {:?}", false_positives as f32 / 100000.0);
 
-    let mut filter = StableBloomFilter::new(100, 2, 0.03, DefaultBuildHashKernals::new(random(), RandomState::new()));
+    let mut filter = StableBloomFilter::new(100, 2, 0.03, DefaultBuildHashKernels::new(random(), RandomState::new()));
     let false_positives: usize = (0..100000)
         .filter(|_| {
             let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(2).collect();

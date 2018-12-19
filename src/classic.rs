@@ -1,26 +1,26 @@
 use crate::buckets::Buckets;
-use crate::{BloomFilter, BuildHashKernals, HashKernals, UpdatableBloomFilter};
+use crate::{BloomFilter, BuildHashKernels, HashKernels, UpdatableBloomFilter};
 use std::hash::Hash;
 
-pub struct Filter<BHK: BuildHashKernals> {
+pub struct Filter<BHK: BuildHashKernels> {
     buckets: Buckets,      // filter data
-    hash_kernals: BHK::HK, // hash kernals
+    hash_kernels: BHK::HK, // hash kernels
 }
 
-impl<BHK: BuildHashKernals> Filter<BHK> {
+impl<BHK: BuildHashKernels> Filter<BHK> {
     /// Create a new bloom filter structure.
     /// items_count is an estimation of the maximum number of items to store.
     /// fp_rate is the wanted rate of false positives, in ]0.0, 1.0[
-    pub fn new(items_count: usize, fp_rate: f64, build_hash_kernals: BHK) -> Self {
+    pub fn new(items_count: usize, fp_rate: f64, build_hash_kernels: BHK) -> Self {
         let buckets = Buckets::with_fp_rate(items_count, fp_rate, 1);
-        let hash_kernals = build_hash_kernals.with_fp_rate(fp_rate, buckets.len());
-        Self { buckets, hash_kernals }
+        let hash_kernels = build_hash_kernels.with_fp_rate(fp_rate, buckets.len());
+        Self { buckets, hash_kernels }
     }
 
-    pub fn with_raw_data(raw_data: &[u8], k: usize, build_hash_kernals: BHK) -> Self {
+    pub fn with_raw_data(raw_data: &[u8], k: usize, build_hash_kernels: BHK) -> Self {
         let buckets = Buckets::with_raw_data(raw_data.len() * 8, 1, raw_data);
-        let hash_kernals = build_hash_kernals.with_k(k, buckets.len());
-        Self { buckets, hash_kernals }
+        let hash_kernels = build_hash_kernels.with_k(k, buckets.len());
+        Self { buckets, hash_kernels }
     }
 
     pub fn buckets(&self) -> &Buckets {
@@ -28,13 +28,13 @@ impl<BHK: BuildHashKernals> Filter<BHK> {
     }
 }
 
-impl<BHK: BuildHashKernals> BloomFilter for Filter<BHK> {
+impl<BHK: BuildHashKernels> BloomFilter for Filter<BHK> {
     fn insert<T: Hash>(&mut self, item: &T) {
-        self.hash_kernals.hash_iter(item).for_each(|i| self.buckets.set(i, 1))
+        self.hash_kernels.hash_iter(item).for_each(|i| self.buckets.set(i, 1))
     }
 
     fn contains<T: Hash>(&self, item: &T) -> bool {
-        self.hash_kernals.hash_iter(item).all(|i| self.buckets.get(i) == 1)
+        self.hash_kernels.hash_iter(item).all(|i| self.buckets.get(i) == 1)
     }
 
     fn reset(&mut self) {
@@ -42,7 +42,7 @@ impl<BHK: BuildHashKernals> BloomFilter for Filter<BHK> {
     }
 }
 
-impl<BHK: BuildHashKernals> UpdatableBloomFilter for Filter<BHK> {
+impl<BHK: BuildHashKernels> UpdatableBloomFilter for Filter<BHK> {
     fn update(&mut self, raw_data: &[u8]) {
         self.buckets.update(raw_data)
     }
@@ -51,13 +51,13 @@ impl<BHK: BuildHashKernals> UpdatableBloomFilter for Filter<BHK> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::hash::{DefaultBuildHashKernals, DefaultBuildHasher};
+    use crate::hash::{DefaultBuildHashKernels, DefaultBuildHasher};
     use proptest::{collection::size_range, prelude::any_with, proptest, proptest_helper};
     use rand::random;
     use std::collections::hash_map::RandomState;
 
     fn _contains(items: &[usize]) {
-        let mut filter = Filter::new(100, 0.03, DefaultBuildHashKernals::new(random(), RandomState::new()));
+        let mut filter = Filter::new(100, 0.03, DefaultBuildHashKernels::new(random(), RandomState::new()));
         assert!(items.iter().all(|i| !filter.contains(i)));
         items.iter().for_each(|i| filter.insert(i));
         assert!(items.iter().all(|i| filter.contains(i)));
@@ -73,11 +73,11 @@ mod tests {
     fn _raw_data(items: &[usize]) {
         let data = vec![0; 8];
         let hash_seed = random();
-        let mut filter = Filter::with_raw_data(&data, 2, DefaultBuildHashKernals::new(hash_seed, DefaultBuildHasher));
+        let mut filter = Filter::with_raw_data(&data, 2, DefaultBuildHashKernels::new(hash_seed, DefaultBuildHasher));
         assert!(items.iter().all(|i| !filter.contains(i)));
         items.iter().for_each(|i| filter.insert(i));
         let data = filter.buckets().raw_data();
-        let filter = Filter::with_raw_data(&data, 2, DefaultBuildHashKernals::new(hash_seed, DefaultBuildHasher));
+        let filter = Filter::with_raw_data(&data, 2, DefaultBuildHashKernels::new(hash_seed, DefaultBuildHasher));
         assert!(items.iter().all(|i| filter.contains(i)));
     }
 
@@ -92,10 +92,10 @@ mod tests {
         let data = vec![0; 8];
         let hash_seed = random();
 
-        let mut filter1 = Filter::with_raw_data(&data, 2, DefaultBuildHashKernals::new(hash_seed, DefaultBuildHasher));
+        let mut filter1 = Filter::with_raw_data(&data, 2, DefaultBuildHashKernels::new(hash_seed, DefaultBuildHasher));
         items1.iter().for_each(|i| filter1.insert(i));
 
-        let mut filter2 = Filter::with_raw_data(&data, 2, DefaultBuildHashKernals::new(hash_seed, DefaultBuildHasher));
+        let mut filter2 = Filter::with_raw_data(&data, 2, DefaultBuildHashKernels::new(hash_seed, DefaultBuildHasher));
         items2.iter().for_each(|i| filter2.insert(i));
 
         filter1.update(&filter2.buckets().raw_data());

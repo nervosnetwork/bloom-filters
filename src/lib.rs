@@ -8,7 +8,7 @@ mod stable;
 
 pub use crate::classic::Filter as ClassicBloomFilter;
 pub use crate::counting::Filter as CountingBloomFilter;
-pub use crate::hash::{BuildHashKernals, DefaultBuildHashKernals, DefaultBuildHasher, DefaultHashKernals, HashKernals};
+pub use crate::hash::{BuildHashKernels, DefaultBuildHashKernels, DefaultBuildHasher, DefaultHashKernels, HashKernels};
 pub use crate::stable::Filter as StableBloomFilter;
 
 pub trait BloomFilter {
