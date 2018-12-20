@@ -1,19 +1,19 @@
-use buckets::Buckets;
-use hash::compute_k_num;
+use crate::buckets::Buckets;
+use crate::hash::compute_k_num;
+use crate::{BloomFilter, BuildHashKernels, HashKernels};
 use rand::random;
-use std::hash::{BuildHasher, Hash};
-use {BloomFilter, DoubleHashing, HashKernals};
+use std::hash::Hash;
 
-pub struct Filter<BH> {
-    buckets: Buckets,                // filter data
-    hash_kernals: DoubleHashing<BH>, // a hash function builder
-    p: usize,                        // number of buckets to decrement,
+pub struct Filter<BHK: BuildHashKernels> {
+    buckets: Buckets,      // filter data
+    hash_kernels: BHK::HK, // hash kernels
+    p: usize,              // number of buckets to decrement,
 }
 
-impl<BH: BuildHasher> Filter<BH> {
+impl<BHK: BuildHashKernels> Filter<BHK> {
     /// Creates a new Stable Bloom Filter with m buckets and d
     /// bits allocated per bucket optimized for the target false-positive rate.
-    pub fn new(m: usize, d: u8, fp_rate: f64, build_hasher: BH) -> Self {
+    pub fn new(m: usize, d: u8, fp_rate: f64, build_hash_kernels: BHK) -> Self {
         let mut k = compute_k_num(fp_rate);
         if k > m {
             k = m
@@ -22,11 +22,11 @@ impl<BH: BuildHasher> Filter<BH> {
         }
 
         let buckets = Buckets::new(m, d);
-        let hash_kernals = DoubleHashing::with_k(k, buckets.len(), build_hasher);
+        let hash_kernels = build_hash_kernels.with_k(k, buckets.len());
 
         Self {
             buckets,
-            hash_kernals,
+            hash_kernels,
             p: compute_p_num(m, k, d, fp_rate),
         }
     }
@@ -55,15 +55,15 @@ fn compute_p_num(m: usize, k: usize, d: u8, fp_rate: f64) -> usize {
     }
 }
 
-impl<BH: BuildHasher> BloomFilter for Filter<BH> {
+impl<BHK: BuildHashKernels> BloomFilter for Filter<BHK> {
     fn insert<T: Hash>(&mut self, item: &T) {
         self.decrement();
         let max = self.buckets.max_value();
-        self.hash_kernals.hash_iter(item).for_each(|i| self.buckets.set(i, max))
+        self.hash_kernels.hash_iter(item).for_each(|i| self.buckets.set(i, max))
     }
 
     fn contains<T: Hash>(&self, item: &T) -> bool {
-        self.hash_kernals.hash_iter(item).all(|i| self.buckets.get(i) > 0)
+        self.hash_kernels.hash_iter(item).all(|i| self.buckets.get(i) > 0)
     }
 
     fn reset(&mut self) {
@@ -74,17 +74,23 @@ impl<BH: BuildHasher> BloomFilter for Filter<BH> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::distributions::Standard;
-    use rand::{thread_rng, Rng};
+    use crate::hash::DefaultBuildHashKernels;
+    use proptest::{collection::size_range, prelude::any_with, proptest, proptest_helper};
+    use rand::random;
     use std::collections::hash_map::RandomState;
 
-    #[test]
-    fn contains() {
+    fn _contains(items: &[usize]) {
         // d = 3, max = (1 << d) - 1
-        let mut filter = Filter::new(100, 3, 0.03, RandomState::new());
-        let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();
+        let mut filter = Filter::new(100, 3, 0.03, DefaultBuildHashKernels::new(random(), RandomState::new()));
         assert!(items.iter().all(|i| !filter.contains(i)));
         items.iter().for_each(|i| filter.insert(i));
         assert!(items.iter().all(|i| filter.contains(i)));
+    }
+
+    proptest! {
+        #[test]
+        fn contains(ref items in any_with::<Vec<usize>>(size_range(7).lift())) {
+            _contains(items)
+        }
     }
 }
