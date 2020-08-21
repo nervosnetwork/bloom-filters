@@ -32,8 +32,8 @@ impl Buckets {
 
     #[allow(clippy::cast_ptr_alignment)]
     pub fn with_raw_data(count: usize, bucket_size: u8, raw_data: &[u8]) -> Self {
-        assert!(bucket_size < 8);
-        assert!((count * bucket_size as usize + BITS_PER_WORD - 1) / BITS_PER_WORD * 8 == raw_data.len());
+        debug_assert!(bucket_size < 8);
+        debug_assert!((count * bucket_size as usize + BITS_PER_WORD - 1) / BITS_PER_WORD * 8 == raw_data.len());
         let data = raw_data
             .chunks(BYTES_PER_WORD)
             .map(|buf| {
