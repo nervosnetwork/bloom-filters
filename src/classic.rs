@@ -52,7 +52,7 @@ impl<BHK: BuildHashKernels> UpdatableBloomFilter for Filter<BHK> {
 mod tests {
     use super::*;
     use crate::hash::{DefaultBuildHashKernels, DefaultBuildHasher};
-    use proptest::{collection::size_range, prelude::any_with, proptest, proptest_helper};
+    use proptest::{collection::size_range, prelude::any_with, proptest};
     use rand::random;
     use std::collections::hash_map::RandomState;
 

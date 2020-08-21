@@ -43,7 +43,7 @@ impl<BHK: BuildHashKernels> RemovableBloomFilter for Filter<BHK> {
 mod tests {
     use super::*;
     use crate::hash::DefaultBuildHashKernels;
-    use proptest::{collection::size_range, prelude::any, prelude::any_with, proptest, proptest_helper};
+    use proptest::{collection::size_range, prelude::any, prelude::any_with, proptest};
     use rand::random;
     use std::collections::hash_map::RandomState;
 
