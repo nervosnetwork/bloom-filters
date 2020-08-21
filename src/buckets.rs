@@ -2,7 +2,7 @@ use std::f64::consts::LN_2;
 use std::mem::size_of;
 use std::ptr::copy_nonoverlapping;
 
-type Word = usize;
+type Word = u64;
 const BYTES_PER_WORD: usize = size_of::<Word>();
 const BITS_PER_WORD: usize = BYTES_PER_WORD * 8;
 
@@ -126,7 +126,7 @@ impl Buckets {
             self.set_word(offset, remain, word);
             self.set_word(offset + remain, length - remain, word >> remain);
         } else {
-            let bit_mask = (1usize << length) - 1;
+            let bit_mask = (1 << length) - 1;
             self.data[word_index] &= !(bit_mask << word_offset);
             self.data[word_index] |= (word & bit_mask) << word_offset;
         }
@@ -139,7 +139,7 @@ impl Buckets {
             let remain = BITS_PER_WORD - word_offset;
             self.get_word(offset, remain) | (self.get_word(offset + remain, length - remain) << remain)
         } else {
-            let bit_mask = (1usize << length) - 1;
+            let bit_mask = (1 << length) - 1;
             (self.data[word_index] & (bit_mask << word_offset)) >> word_offset
         }
     }
