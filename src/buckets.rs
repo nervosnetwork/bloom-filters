@@ -30,7 +30,6 @@ impl Buckets {
         }
     }
 
-    #[allow(clippy::cast_ptr_alignment)]
     pub fn with_raw_data(count: usize, bucket_size: u8, raw_data: &[u8]) -> Self {
         debug_assert!(bucket_size < 8);
         debug_assert!((count * bucket_size as usize + BITS_PER_WORD - 1) / BITS_PER_WORD * 8 == raw_data.len());

@@ -1,0 +1,54 @@
+name: Github Action
+
+on:
+  pull_request:  # trigger on pull requests
+  push:
+    branches:
+      - master    # trigger on push to master
+
+jobs:
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [ linux, macos, windows ]
+        include:
+          - build: linux
+            os: ubuntu-latest
+            rust: 1.51.0
+          - build: macos
+            os: macos-latest
+            rust: 1.51.0
+          - build: windows
+            os: windows-latest
+            rust: 1.51.0
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: |
+          cargo build
+          cargo bench --no-run
+      - name: Run tests
+        timeout-minutes: 40
+        run: cargo test
+
+  rustfmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Format check
+        run: |
+          rustup component add rustfmt
+          cargo fmt --all -- --check
+
+  clippy_check:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Clippy check
+        run: |
+          rustup component add clippy
+          cargo clippy --all
