@@ -7,6 +7,10 @@ const BITS_PER_WORD: usize = BYTES_PER_WORD * 8;
 
 #[allow(non_upper_case_globals)]
 #[derive(Clone)]
+/// Buckets Implemetation with const generics
+/// WordCount: the count of `Word`
+/// BucketCount: the count of bucket
+/// BucketSize: the size of one bucket
 pub struct ConstBuckets<const WordCount: usize, const BucketCount: usize, const BucketSize: u8> {
     data: [Word; WordCount],
     max: u8,
