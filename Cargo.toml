@@ -17,6 +17,9 @@ rand = "0.6"
 criterion = "0.2"
 proptest = "0.9"
 
+[features]
+const_generic = []
+
 [[bench]]
 name = "insert"
 harness = false
