@@ -82,7 +82,7 @@ macro_rules! filter {
         $bucket_count:expr, $bucket_size:expr,
         $fp_rate:expr, $build_hash_kernels:expr
     ) => {
-        StableBloomFilter::<_, {compute_word_num($bucket_count, $bucket_size)}, $bucket_count, $bucket_size>::new($fp_rate, $build_hash_kernels)
+        ConstStableBloomFilter::<_, {compute_word_num($bucket_count, $bucket_size)}, $bucket_count, $bucket_size>::new($fp_rate, $build_hash_kernels)
     };
 }
 
