@@ -18,7 +18,7 @@ criterion = "0.2"
 proptest = "0.9"
 
 [features]
-const_generic = []
+const_generics = []
 
 [[bench]]
 name = "insert"

@@ -2,19 +2,17 @@ use std::hash::Hash;
 
 mod buckets;
 mod classic;
-#[cfg(feature = "const_generic")]
-mod const_buckets;
-#[cfg(feature = "const_generic")]
-mod const_stable;
+#[cfg(feature = "const_generics")]
+mod const_generics;
 mod counting;
 mod hash;
 mod stable;
 
 pub use crate::classic::Filter as ClassicBloomFilter;
-#[cfg(feature = "const_generic")]
-pub use crate::const_buckets::compute_word_num;
-#[cfg(feature = "const_generic")]
-pub use crate::const_stable::Filter as ConstStableBloomFilter;
+#[cfg(feature = "const_generics")]
+pub use crate::const_generics::buckets::compute_word_num;
+#[cfg(feature = "const_generics")]
+pub use crate::const_generics::stable::Filter as ConstStableBloomFilter;
 pub use crate::counting::Filter as CountingBloomFilter;
 pub use crate::hash::{BuildHashKernels, DefaultBuildHashKernels, DefaultBuildHasher, DefaultHashKernels, HashKernels};
 pub use crate::stable::Filter as StableBloomFilter;
