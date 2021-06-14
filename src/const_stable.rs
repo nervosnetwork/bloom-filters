@@ -1,5 +1,5 @@
 //! Stable Bloom Filter Implementation with Const Generics
-//! 
+//!
 //! In some cases of using bloom filter, the memory size of bloom filter can be determined
 //! in `compile time`. So it's an efficient way to implement bloom filter data structure with `const generics`,
 //! which is stable in rust 1.51 version.
@@ -7,19 +7,19 @@
 //! Compared to implementation using `Vec<T>`, there are some advantages:  
 //! + The metadata is placed on the `stack` instead of `heap`, it will reduce some cost of `runtime`
 //! + More elegant way to manage memory
-//! 
+//!
 //! However, there's also some disadvantages:
-//! + Due to floating point arithmetic has not allowed in const fn yet, 
+//! + Due to floating point arithmetic has not allowed in const fn yet,
 //! we should compute the num of bucket by hand
 //! + Less functionality
-//! 
+//!
 //! Even so, it makes sence to implemet bloom filter with const generics.
-//! 
+//!
 //! example:
 //! `cargo.toml`:  
 //! bloom-filters = { git = "https://github.com/nervosnetwork/bloom-filters", features = ["const_generic"]}
 //! rand = rand = "0.6"
-//! 
+//!
 //! ```Rust
 //! use std::collections::hash_map::RandomState;
 //! use rand::{random, thread_rng, Rng};
@@ -39,7 +39,7 @@
 //!     let _ret: Vec<bool> = items.iter().map(|i| filter.contains(i)).collect();    
 //! }
 //! ```
-//! 
+//!
 use crate::const_buckets::ConstBuckets;
 use crate::hash::compute_k_num;
 use crate::{BloomFilter, BuildHashKernels, HashKernels};
@@ -48,9 +48,9 @@ use std::hash::Hash;
 
 #[derive(Clone)]
 pub struct Filter<BHK: BuildHashKernels, const W: usize, const M: usize, const D: u8> {
-    buckets: ConstBuckets<W, M, D>,      // filter data
-    hash_kernels: BHK::HK, // hash kernels
-    p: usize,              // number of buckets to decrement,
+    buckets: ConstBuckets<W, M, D>, // filter data
+    hash_kernels: BHK::HK,          // hash kernels
+    p: usize,                       // number of buckets to decrement,
 }
 
 impl<BHK: BuildHashKernels, const W: usize, const M: usize, const D: u8> Filter<BHK, W, M, D> {
@@ -124,20 +124,26 @@ macro_rules! filter {
         $bucket_count:expr, $bucket_size:expr,
         $fp_rate:expr, $build_hash_kernels:expr
     ) => {
-        ConstStableBloomFilter::<_, {compute_word_num($bucket_count, $bucket_size)}, $bucket_count, $bucket_size>::new($fp_rate, $build_hash_kernels)
+        ConstStableBloomFilter::<_, { compute_word_num($bucket_count, $bucket_size) }, $bucket_count, $bucket_size>::new(
+            $fp_rate,
+            $build_hash_kernels,
+        )
     };
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::const_buckets::compute_word_num;
     use crate::hash::DefaultBuildHashKernels;
     use proptest::{collection::size_range, prelude::any_with, proptest};
     use rand::random;
     use std::collections::hash_map::RandomState;
-    use crate::const_buckets::compute_word_num;
     fn _contains(items: &[usize]) {
-        let mut filter = Filter::<_, {compute_word_num(730, 3)}, 730, 3>::new(0.03, DefaultBuildHashKernels::new(random(), RandomState::new()));
+        let mut filter = Filter::<_, { compute_word_num(730, 3) }, 730, 3>::new(
+            0.03,
+            DefaultBuildHashKernels::new(random(), RandomState::new()),
+        );
         assert!(items.iter().all(|i| !filter.contains(i)));
         items.iter().for_each(|i| filter.insert(i));
         assert!(items.iter().all(|i| filter.contains(i)));

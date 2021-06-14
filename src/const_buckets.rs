@@ -23,7 +23,7 @@ impl<const WordCount: usize, const BucketCount: usize, const BucketSize: u8> Con
     pub fn new() -> Self {
         debug_assert!(BucketSize < 8);
         Self {
-            data:[0; WordCount],
+            data: [0; WordCount],
             max: (1u8 << BucketSize) - 1,
         }
     }
@@ -65,7 +65,6 @@ impl<const WordCount: usize, const BucketCount: usize, const BucketSize: u8> Con
                 });
                 *word = value;
             });
-
     }
 
     #[inline(always)]
@@ -143,7 +142,7 @@ mod tests {
 
     #[test]
     fn one_bit() {
-        let mut buckets = ConstBuckets::<{compute_word_num(100, 1)}, 100, 1>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(100, 1) }, 100, 1>::new();
         buckets.set(0, 1);
         buckets.set(1, 0);
         buckets.set(2, 1);
@@ -156,7 +155,7 @@ mod tests {
 
     #[test]
     fn three_bits() {
-        let mut buckets = ConstBuckets::<{compute_word_num(100, 3)}, 100, 3>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(100, 3) }, 100, 3>::new();
         buckets.set(0, 1);
         buckets.set(1, 2);
         buckets.set(10, 3);
@@ -173,7 +172,7 @@ mod tests {
 
     #[test]
     fn reset() {
-        let mut buckets = ConstBuckets::<{compute_word_num(100, 1)}, 100, 1>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(100, 1) }, 100, 1>::new();
         buckets.set(1, 1);
         assert_eq!(1, buckets.get(1));
         buckets.reset();
@@ -182,7 +181,7 @@ mod tests {
 
     #[test]
     fn increment() {
-        let mut buckets = ConstBuckets::<{compute_word_num(100, 3)}, 100, 3>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(100, 3) }, 100, 3>::new();
         buckets.increment(10, 2);
         assert_eq!(2, buckets.get(10));
         buckets.increment(10, 1);
@@ -195,7 +194,7 @@ mod tests {
         assert_eq!(0, buckets.get(10));
 
         // test overflow
-        let mut buckets = ConstBuckets::<{compute_word_num(3, 7)}, 3, 7>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(3, 7) }, 3, 7>::new();
         buckets.increment(0, 127);
         assert_eq!(127, buckets.get(0));
         buckets.increment(0, 1);
@@ -204,19 +203,19 @@ mod tests {
 
     #[test]
     fn with_raw_data() {
-        let mut buckets = ConstBuckets::<{compute_word_num(100, 1)}, 100, 1>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(100, 1) }, 100, 1>::new();
         buckets.set(0, 1);
         buckets.set(1, 0);
         buckets.set(2, 1);
         buckets.set(3, 0);
         let raw_data = buckets.raw_data();
-        let buckets = ConstBuckets::<{compute_word_num(100, 1)}, 100, 1>::with_raw_data(&raw_data);
+        let buckets = ConstBuckets::<{ compute_word_num(100, 1) }, 100, 1>::with_raw_data(&raw_data);
         assert_eq!(1, buckets.get(0));
         assert_eq!(0, buckets.get(1));
         assert_eq!(1, buckets.get(2));
         assert_eq!(0, buckets.get(3));
 
-        let mut buckets = ConstBuckets::<{compute_word_num(100, 3)}, 100, 3>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(100, 3) }, 100, 3>::new();
         buckets.set(0, 1);
         buckets.set(1, 2);
         buckets.set(10, 3);
@@ -224,7 +223,7 @@ mod tests {
         buckets.set(20, 5);
         buckets.set(21, 6);
         let raw_data = buckets.raw_data();
-        let buckets = ConstBuckets::<{compute_word_num(100, 3)}, 100, 3>::with_raw_data(&raw_data);
+        let buckets = ConstBuckets::<{ compute_word_num(100, 3) }, 100, 3>::with_raw_data(&raw_data);
         assert_eq!(1, buckets.get(0));
         assert_eq!(2, buckets.get(1));
         assert_eq!(3, buckets.get(10));
@@ -235,12 +234,12 @@ mod tests {
 
     #[test]
     fn update() {
-        let mut b1 = ConstBuckets::<{compute_word_num(100, 1)}, 100, 1>::new();
+        let mut b1 = ConstBuckets::<{ compute_word_num(100, 1) }, 100, 1>::new();
         b1.set(0, 1);
         b1.set(20, 1);
         b1.set(63, 1);
 
-        let mut b2 = ConstBuckets::<{compute_word_num(50, 1)}, 50, 1>::new();
+        let mut b2 = ConstBuckets::<{ compute_word_num(50, 1) }, 50, 1>::new();
         b2.set(7, 1);
         b2.set(20, 1);
         b2.set(21, 1);

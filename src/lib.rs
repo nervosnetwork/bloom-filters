@@ -2,22 +2,22 @@ use std::hash::Hash;
 
 mod buckets;
 mod classic;
-mod counting;
-mod hash;
-mod stable;
 #[cfg(feature = "const_generic")]
 mod const_buckets;
 #[cfg(feature = "const_generic")]
 mod const_stable;
+mod counting;
+mod hash;
+mod stable;
 
 pub use crate::classic::Filter as ClassicBloomFilter;
+#[cfg(feature = "const_generic")]
+pub use crate::const_buckets::compute_word_num;
+#[cfg(feature = "const_generic")]
+pub use crate::const_stable::Filter as ConstStableBloomFilter;
 pub use crate::counting::Filter as CountingBloomFilter;
 pub use crate::hash::{BuildHashKernels, DefaultBuildHashKernels, DefaultBuildHasher, DefaultHashKernels, HashKernels};
 pub use crate::stable::Filter as StableBloomFilter;
-#[cfg(feature = "const_generic")]
-pub use crate::const_stable::Filter  as ConstStableBloomFilter;
-#[cfg(feature = "const_generic")]
-pub use crate::const_buckets::compute_word_num;
 
 pub trait BloomFilter {
     fn insert<T: Hash>(&mut self, item: &T);
