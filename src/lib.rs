@@ -2,7 +2,6 @@ use std::hash::Hash;
 
 mod buckets;
 mod classic;
-#[cfg(feature = "const_generics")]
 mod const_generics;
 mod counting;
 mod hash;
