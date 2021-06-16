@@ -17,7 +17,7 @@
 //!
 //! example:
 //! `cargo.toml`:  
-//! bloom-filters = { git = "https://github.com/nervosnetwork/bloom-filters", features = ["const_generic"]}
+//! bloom-filters = { git = "https://github.com/nervosnetwork/bloom-filters", features = ["const_generics"]}
 //! rand = "0.6"
 //!
 //! ```Rust
