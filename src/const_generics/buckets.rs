@@ -28,6 +28,7 @@ impl<const WordCount: usize, const BucketCount: usize, const BucketSize: u8> Con
         }
     }
 
+    #[allow(unused)]
     pub fn with_raw_data(raw_data: &[u8]) -> Self {
         debug_assert!(BucketSize < 8);
         debug_assert!(WordCount * 8 == raw_data.len());
@@ -44,6 +45,7 @@ impl<const WordCount: usize, const BucketCount: usize, const BucketSize: u8> Con
         }
     }
 
+    #[allow(unused)]
     pub fn raw_data(&self) -> Vec<u8> {
         let mut result = vec![0; self.data.len() * BYTES_PER_WORD];
         for (d, chunk) in self.data.iter().zip(result.chunks_mut(BYTES_PER_WORD)) {
@@ -55,6 +57,7 @@ impl<const WordCount: usize, const BucketCount: usize, const BucketSize: u8> Con
         result
     }
 
+    #[allow(unused)]
     pub fn update(&mut self, raw_data: &[u8]) {
         self.data
             .iter_mut()
@@ -132,6 +135,7 @@ impl<const WordCount: usize, const BucketCount: usize, const BucketSize: u8> Con
     }
 }
 
+#[allow(unused)]
 pub const fn compute_word_num(bucket_cout: usize, bucket_size: u8) -> usize {
     (bucket_cout * bucket_size as usize + BITS_PER_WORD - 1) / BITS_PER_WORD
 }
