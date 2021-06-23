@@ -1,4 +1,4 @@
-//! Stable Bloom Filter Implementation with Const Generics
+//! Bloom Filter Implementation with Const Generics
 //!
 //! In some cases of using bloom filter, the memory size of bloom filter can be determined
 //! in `compile time`. So it's an efficient way to implement bloom filter data structure with `const generics`,
