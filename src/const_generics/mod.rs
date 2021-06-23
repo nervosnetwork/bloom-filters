@@ -20,7 +20,7 @@
 //! bloom-filters = { git = "https://github.com/nervosnetwork/bloom-filters", features = ["const_generics"]}
 //! rand = "0.6"
 //!
-//! ```Rust
+//! ```
 //! use std::collections::hash_map::RandomState;
 //! use rand::{random, thread_rng, Rng};
 //! use rand::distributions::Standard;
@@ -41,7 +41,7 @@
 //! ```
 //!
 //! classic bloom filter example:
-//! ```Rust
+//! ```
 //! use std::collections::hash_map::RandomState;
 //! use rand::{random, thread_rng, Rng};
 //! use rand::distributions::Standard;

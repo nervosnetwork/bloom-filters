@@ -45,6 +45,7 @@ impl<BHK: BuildHashKernels, const W: usize> BloomFilter for Filter<BHK, W> {
     }
 }
 
+// Calculates the buckets count approximately(bigger than how many system needs)
 #[macro_export]
 macro_rules! classicfilter {
     (
