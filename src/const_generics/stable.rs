@@ -5,36 +5,36 @@ use rand::random;
 use std::hash::Hash;
 
 #[derive(Clone)]
-pub struct Filter<BHK: BuildHashKernels, const W: usize, const M: usize, const D: u8> {
-    buckets: ConstBuckets<W, M, D>, // filter data
-    hash_kernels: BHK::HK,          // hash kernels
-    p: usize,                       // number of buckets to decrement,
+pub struct Filter<BHK: BuildHashKernels, const W: usize> {
+    buckets: ConstBuckets<W>, // filter data
+    hash_kernels: BHK::HK,    // hash kernels
+    p: usize,                 // number of buckets to decrement,
 }
 
-impl<BHK: BuildHashKernels, const W: usize, const M: usize, const D: u8> Filter<BHK, W, M, D> {
+impl<BHK: BuildHashKernels, const W: usize> Filter<BHK, W> {
     /// Creates a new Stable Bloom Filter with m buckets and d
     /// bits allocated per bucket optimized for the target false-positive rate.
     #[allow(unused)]
-    pub fn new(fp_rate: f64, build_hash_kernels: BHK) -> Self {
+    pub fn new(bucket_count: usize, bucket_size: u8, fp_rate: f64, build_hash_kernels: BHK) -> Self {
         let mut k = compute_k_num(fp_rate);
-        if k > M {
-            k = M
+        if k > bucket_count {
+            k = bucket_count
         } else if k == 0 {
             k = 1
         }
 
-        let buckets = ConstBuckets::new();
+        let buckets = ConstBuckets::new(bucket_count, bucket_size);
         let hash_kernels = build_hash_kernels.with_k(k, buckets.len());
 
         Self {
             buckets,
             hash_kernels,
-            p: compute_p_num(M, k, D, fp_rate),
+            p: compute_p_num(bucket_count, k, bucket_size, fp_rate),
         }
     }
 
     #[allow(unused)]
-    pub fn buckets(&self) -> &ConstBuckets<W, M, D> {
+    pub fn buckets(&self) -> &ConstBuckets<W> {
         &self.buckets
     }
 
@@ -62,7 +62,7 @@ fn compute_p_num(m: usize, k: usize, d: u8, fp_rate: f64) -> usize {
     }
 }
 
-impl<BHK: BuildHashKernels, const W: usize, const B: usize, const S: u8> BloomFilter for Filter<BHK, W, B, S> {
+impl<BHK: BuildHashKernels, const W: usize> BloomFilter for Filter<BHK, W> {
     fn insert<T: Hash>(&mut self, item: &T) {
         self.decrement();
         let max = self.buckets.max_value();
@@ -79,12 +79,14 @@ impl<BHK: BuildHashKernels, const W: usize, const B: usize, const S: u8> BloomFi
 }
 
 #[macro_export]
-macro_rules! filter {
+macro_rules! stablefilter {
     (
         $bucket_count:expr, $bucket_size:expr,
         $fp_rate:expr, $build_hash_kernels:expr
     ) => {
-        ConstStableBloomFilter::<_, { compute_word_num($bucket_count, $bucket_size) }, $bucket_count, $bucket_size>::new(
+        ConstStableBloomFilter::<_, { compute_word_num($bucket_count, $bucket_size) }>::new(
+            $bucket_count,
+            $bucket_size,
             $fp_rate,
             $build_hash_kernels,
         )
@@ -100,7 +102,9 @@ mod tests {
     use rand::random;
     use std::collections::hash_map::RandomState;
     fn _contains(items: &[usize]) {
-        let mut filter = Filter::<_, { compute_word_num(730, 3) }, 730, 3>::new(
+        let mut filter = Filter::<_, { compute_word_num(730, 3) }>::new(
+            730,
+            3,
             0.03,
             DefaultBuildHashKernels::new(random(), RandomState::new()),
         );

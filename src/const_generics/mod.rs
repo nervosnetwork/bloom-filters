@@ -24,13 +24,13 @@
 //! use std::collections::hash_map::RandomState;
 //! use rand::{random, thread_rng, Rng};
 //! use rand::distributions::Standard;
-//! use bloom_filters::{BloomFilter, ConstStableBloomFilter, DefaultBuildHashKernels, compute_word_num, filter};
+//! use bloom_filters::{BloomFilter, ConstStableBloomFilter, DefaultBuildHashKernels, compute_word_num, stablefilter};
 //! fn main() {
 //!     // item count: 10
 //!     // bucket size: 3
 //!     // fp rate: 0.03
 //!     // bucket count = -10 * ln(0.03) / ln2 ^ 2 = 72.9844, we need to compute the bucket count by hand!
-//!     let mut filter = filter!(
+//!     let mut filter = stablefilter!(
 //!        73, 3, 0.03, DefaultBuildHashKernels::new(random(), RandomState::new())
 //!     );
 //!     let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();

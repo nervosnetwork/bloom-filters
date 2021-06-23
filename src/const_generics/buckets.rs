@@ -1,3 +1,4 @@
+use std::f64::consts::LN_2;
 use std::mem::size_of;
 use std::ptr::copy_nonoverlapping;
 
@@ -11,26 +12,35 @@ const BITS_PER_WORD: usize = BYTES_PER_WORD * 8;
 /// WordCount: the count of `Word`
 /// BucketCount: the count of bucket
 /// BucketSize: the size of one bucket
-pub struct ConstBuckets<const WordCount: usize, const BucketCount: usize, const BucketSize: u8> {
+pub struct ConstBuckets<const WordCount: usize> {
     data: [Word; WordCount],
+    bucket_count: usize,
+    bucket_size: u8,
     max: u8,
 }
 
 #[allow(non_upper_case_globals)]
-impl<const WordCount: usize, const BucketCount: usize, const BucketSize: u8> ConstBuckets<WordCount, BucketCount, BucketSize> {
+impl<const WordCount: usize> ConstBuckets<WordCount> {
     /// Creates a new Buckets with the provided number of buckets where
     /// each bucket is the specified number of bits.
-    pub fn new() -> Self {
-        debug_assert!(BucketSize < 8);
+    pub fn new(bucket_count: usize, bucket_size: u8) -> Self {
+        debug_assert!(bucket_size < 8);
         Self {
             data: [0; WordCount],
-            max: (1u8 << BucketSize) - 1,
+            bucket_count,
+            bucket_size,
+            max: (1u8 << bucket_size) - 1,
         }
     }
 
     #[allow(unused)]
-    pub fn with_raw_data(raw_data: &[u8]) -> Self {
-        debug_assert!(BucketSize < 8);
+    pub fn with_fp_rate(items_count: usize, fp_rate: f64, bucket_size: u8) -> Self {
+        Self::new(optimal_bucket_count(items_count, fp_rate), bucket_size)
+    }
+
+    #[allow(unused)]
+    pub fn with_raw_data(bucket_count: usize, bucket_size: u8, raw_data: &[u8]) -> Self {
+        debug_assert!(bucket_size < 8);
         debug_assert!(WordCount * 8 == raw_data.len());
         let data = [0; WordCount];
         for (idx, buf) in raw_data.chunks(BYTES_PER_WORD).enumerate() {
@@ -41,7 +51,9 @@ impl<const WordCount: usize, const BucketCount: usize, const BucketSize: u8> Con
         }
         Self {
             data,
-            max: (1u8 << BucketSize) - 1,
+            bucket_count,
+            bucket_size,
+            max: (1u8 << bucket_size) - 1,
         }
     }
 
@@ -72,7 +84,7 @@ impl<const WordCount: usize, const BucketCount: usize, const BucketSize: u8> Con
 
     #[inline(always)]
     pub fn len(&self) -> usize {
-        BucketCount
+        self.bucket_count
     }
 
     #[inline(always)]
@@ -97,14 +109,14 @@ impl<const WordCount: usize, const BucketCount: usize, const BucketSize: u8> Con
     }
 
     pub fn set(&mut self, bucket: usize, byte: u8) {
-        let offset = bucket * BucketSize as usize;
-        let length = BucketSize as usize;
+        let offset = bucket * self.bucket_size as usize;
+        let length = self.bucket_size as usize;
         let word = if byte > self.max as u8 { self.max } else { byte } as Word;
         self.set_word(offset, length, word);
     }
 
     pub fn get(&self, bucket: usize) -> u8 {
-        self.get_word(bucket * BucketSize as usize, BucketSize as usize) as u8
+        self.get_word(bucket * self.bucket_size as usize, self.bucket_size as usize) as u8
     }
 
     fn set_word(&mut self, offset: usize, length: usize, word: Word) {
@@ -136,8 +148,30 @@ impl<const WordCount: usize, const BucketCount: usize, const BucketSize: u8> Con
 }
 
 #[allow(unused)]
-pub const fn compute_word_num(bucket_cout: usize, bucket_size: u8) -> usize {
-    (bucket_cout * bucket_size as usize + BITS_PER_WORD - 1) / BITS_PER_WORD
+pub const fn compute_word_num(bucket_count: usize, bucket_size: u8) -> usize {
+    (bucket_count * bucket_size as usize + BITS_PER_WORD - 1) / BITS_PER_WORD
+}
+
+const LN_2_2: f64 = LN_2 * LN_2;
+
+// Calculates the optimal buckets count, m, based on the number of
+// items and the desired rate of false positives.
+// optimal buckets count = - items_count * ln(fp_rate) / (ln2) ^ 2
+#[allow(unused)]
+fn optimal_bucket_count(items_count: usize, fp_rate: f64) -> usize {
+    debug_assert!(items_count > 0);
+    debug_assert!(fp_rate > 0.0 && fp_rate < 1.0);
+    ((items_count as f64) * fp_rate.ln().abs() / LN_2_2).ceil() as usize
+}
+
+// approximate buckets count
+// optimal buckets count = - items_count * ln(fp_rate) / (ln2) ^ 2
+// = items_count * (ln100 - ln(fp_rate100)) / (ln2) ^ 2
+// < items_count * (5 - 1) / 0. 5 ^ 2
+// = items_count * 16
+#[allow(unused)]
+const fn approximate_bucket_count(items_count: usize) -> usize {
+    items_count * 16
 }
 
 #[cfg(test)]
@@ -146,7 +180,7 @@ mod tests {
 
     #[test]
     fn one_bit() {
-        let mut buckets = ConstBuckets::<{ compute_word_num(100, 1) }, 100, 1>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(100, 1) }>::new(100, 1);
         buckets.set(0, 1);
         buckets.set(1, 0);
         buckets.set(2, 1);
@@ -159,7 +193,7 @@ mod tests {
 
     #[test]
     fn three_bits() {
-        let mut buckets = ConstBuckets::<{ compute_word_num(100, 3) }, 100, 3>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(100, 3) }>::new(100, 3);
         buckets.set(0, 1);
         buckets.set(1, 2);
         buckets.set(10, 3);
@@ -176,7 +210,7 @@ mod tests {
 
     #[test]
     fn reset() {
-        let mut buckets = ConstBuckets::<{ compute_word_num(100, 1) }, 100, 1>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(100, 1) }>::new(100, 1);
         buckets.set(1, 1);
         assert_eq!(1, buckets.get(1));
         buckets.reset();
@@ -185,7 +219,7 @@ mod tests {
 
     #[test]
     fn increment() {
-        let mut buckets = ConstBuckets::<{ compute_word_num(100, 3) }, 100, 3>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(100, 3) }>::new(100, 3);
         buckets.increment(10, 2);
         assert_eq!(2, buckets.get(10));
         buckets.increment(10, 1);
@@ -198,7 +232,7 @@ mod tests {
         assert_eq!(0, buckets.get(10));
 
         // test overflow
-        let mut buckets = ConstBuckets::<{ compute_word_num(3, 7) }, 3, 7>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(3, 7) }>::new(3, 7);
         buckets.increment(0, 127);
         assert_eq!(127, buckets.get(0));
         buckets.increment(0, 1);
@@ -207,19 +241,19 @@ mod tests {
 
     #[test]
     fn with_raw_data() {
-        let mut buckets = ConstBuckets::<{ compute_word_num(100, 1) }, 100, 1>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(100, 1) }>::new(100, 1);
         buckets.set(0, 1);
         buckets.set(1, 0);
         buckets.set(2, 1);
         buckets.set(3, 0);
         let raw_data = buckets.raw_data();
-        let buckets = ConstBuckets::<{ compute_word_num(100, 1) }, 100, 1>::with_raw_data(&raw_data);
+        let buckets = ConstBuckets::<{ compute_word_num(100, 1) }>::with_raw_data(100, 1, &raw_data);
         assert_eq!(1, buckets.get(0));
         assert_eq!(0, buckets.get(1));
         assert_eq!(1, buckets.get(2));
         assert_eq!(0, buckets.get(3));
 
-        let mut buckets = ConstBuckets::<{ compute_word_num(100, 3) }, 100, 3>::new();
+        let mut buckets = ConstBuckets::<{ compute_word_num(100, 3) }>::new(100, 3);
         buckets.set(0, 1);
         buckets.set(1, 2);
         buckets.set(10, 3);
@@ -227,7 +261,7 @@ mod tests {
         buckets.set(20, 5);
         buckets.set(21, 6);
         let raw_data = buckets.raw_data();
-        let buckets = ConstBuckets::<{ compute_word_num(100, 3) }, 100, 3>::with_raw_data(&raw_data);
+        let buckets = ConstBuckets::<{ compute_word_num(100, 3) }>::with_raw_data(100, 3, &raw_data);
         assert_eq!(1, buckets.get(0));
         assert_eq!(2, buckets.get(1));
         assert_eq!(3, buckets.get(10));
@@ -238,12 +272,12 @@ mod tests {
 
     #[test]
     fn update() {
-        let mut b1 = ConstBuckets::<{ compute_word_num(100, 1) }, 100, 1>::new();
+        let mut b1 = ConstBuckets::<{ compute_word_num(100, 1) }>::new(100, 1);
         b1.set(0, 1);
         b1.set(20, 1);
         b1.set(63, 1);
 
-        let mut b2 = ConstBuckets::<{ compute_word_num(50, 1) }, 50, 1>::new();
+        let mut b2 = ConstBuckets::<{ compute_word_num(50, 1) }>::new(50, 1);
         b2.set(7, 1);
         b2.set(20, 1);
         b2.set(21, 1);
