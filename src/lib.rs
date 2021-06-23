@@ -9,7 +9,11 @@ mod stable;
 
 pub use crate::classic::Filter as ClassicBloomFilter;
 #[cfg(feature = "const_generics")]
+pub use crate::const_generics::buckets::approximate_bucket_count;
+#[cfg(feature = "const_generics")]
 pub use crate::const_generics::buckets::compute_word_num;
+#[cfg(feature = "const_generics")]
+pub use crate::const_generics::classic::Filter as ConstClassicBloomFilter;
 #[cfg(feature = "const_generics")]
 pub use crate::const_generics::stable::Filter as ConstStableBloomFilter;
 pub use crate::counting::Filter as CountingBloomFilter;

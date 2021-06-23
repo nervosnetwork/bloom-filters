@@ -170,7 +170,7 @@ fn optimal_bucket_count(items_count: usize, fp_rate: f64) -> usize {
 // < items_count * (5 - 1) / 0. 5 ^ 2
 // = items_count * 16
 #[allow(unused)]
-const fn approximate_bucket_count(items_count: usize) -> usize {
+pub const fn approximate_bucket_count(items_count: usize) -> usize {
     items_count * 16
 }
 

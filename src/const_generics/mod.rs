@@ -15,7 +15,7 @@
 //!
 //! Even so, it makes sence to implemet bloom filter with const generics.
 //!
-//! example:
+//! stable bloom filter example:
 //! `cargo.toml`:  
 //! bloom-filters = { git = "https://github.com/nervosnetwork/bloom-filters", features = ["const_generics"]}
 //! rand = "0.6"
@@ -40,5 +40,27 @@
 //! }
 //! ```
 //!
+//! classic bloom filter example:
+//! ```Rust
+//! use std::collections::hash_map::RandomState;
+//! use rand::{random, thread_rng, Rng};
+//! use rand::distributions::Standard;
+//! use bloom_filters::{BloomFilter, ConstClassicBloomFilter, DefaultBuildHashKernels};
+//! use bloom_filters::{compute_word_num, approximate_bucket_count, classicfilter};
+//! fn main() {
+//!     // item count: 100
+//!     // fp rate: 0.03
+//!     let mut filter = classicfilter!(
+//!         100, 0.03, DefaultBuildHashKernels::new(random(), RandomState::new())
+//!     );
+//!     let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();
+//!     items.iter().for_each(|i| filter.insert(i));
+//!     let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();
+//!     let _ret: Vec<bool> = items.iter().map(|i| filter.contains(i)).collect();
+//! }
+//! ```
+//!
+
 pub mod buckets;
+pub mod classic;
 pub mod stable;
