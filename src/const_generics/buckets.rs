@@ -6,43 +6,37 @@ type Word = u64;
 const BYTES_PER_WORD: usize = size_of::<Word>();
 const BITS_PER_WORD: usize = BYTES_PER_WORD * 8;
 
-#[allow(non_upper_case_globals)]
 #[derive(Clone)]
 /// Buckets Implemetation with const generics
-/// WordCount: the count of `Word`
-/// BucketCount: the count of bucket
-/// BucketSize: the size of one bucket
-pub struct ConstBuckets<const WordCount: usize> {
-    data: [Word; WordCount],
+/// W: the count of `Word`
+pub struct ConstBuckets<const W: usize> {
+    data: [Word; W],
     bucket_count: usize,
     bucket_size: u8,
     max: u8,
 }
 
-#[allow(non_upper_case_globals)]
-impl<const WordCount: usize> ConstBuckets<WordCount> {
+impl<const W: usize> ConstBuckets<W> {
     /// Creates a new Buckets with the provided number of buckets where
     /// each bucket is the specified number of bits.
     pub fn new(bucket_count: usize, bucket_size: u8) -> Self {
         debug_assert!(bucket_size < 8);
         Self {
-            data: [0; WordCount],
+            data: [0; W],
             bucket_count,
             bucket_size,
             max: (1u8 << bucket_size) - 1,
         }
     }
 
-    #[allow(unused)]
     pub fn with_fp_rate(items_count: usize, fp_rate: f64, bucket_size: u8) -> Self {
         Self::new(optimal_bucket_count(items_count, fp_rate), bucket_size)
     }
 
-    #[allow(unused)]
     pub fn with_raw_data(bucket_count: usize, bucket_size: u8, raw_data: &[u8]) -> Self {
         debug_assert!(bucket_size < 8);
-        debug_assert!(WordCount * 8 == raw_data.len());
-        let data = [0; WordCount];
+        debug_assert!(W * 8 == raw_data.len());
+        let data = [0; W];
         for (idx, buf) in raw_data.chunks(BYTES_PER_WORD).enumerate() {
             let d_slice = &data[idx] as *const _ as *mut u8;
             unsafe {
@@ -57,7 +51,6 @@ impl<const WordCount: usize> ConstBuckets<WordCount> {
         }
     }
 
-    #[allow(unused)]
     pub fn raw_data(&self) -> Vec<u8> {
         let mut result = vec![0; self.data.len() * BYTES_PER_WORD];
         for (d, chunk) in self.data.iter().zip(result.chunks_mut(BYTES_PER_WORD)) {
@@ -69,7 +62,6 @@ impl<const WordCount: usize> ConstBuckets<WordCount> {
         result
     }
 
-    #[allow(unused)]
     pub fn update(&mut self, raw_data: &[u8]) {
         self.data
             .iter_mut()
@@ -147,7 +139,6 @@ impl<const WordCount: usize> ConstBuckets<WordCount> {
     }
 }
 
-#[allow(unused)]
 pub const fn compute_word_num(bucket_count: usize, bucket_size: u8) -> usize {
     (bucket_count * bucket_size as usize + BITS_PER_WORD - 1) / BITS_PER_WORD
 }
@@ -157,7 +148,6 @@ const LN_2_2: f64 = LN_2 * LN_2;
 // Calculates the optimal buckets count, m, based on the number of
 // items and the desired rate of false positives.
 // optimal buckets count = - items_count * ln(fp_rate) / (ln2) ^ 2
-#[allow(unused)]
 fn optimal_bucket_count(items_count: usize, fp_rate: f64) -> usize {
     debug_assert!(items_count > 0);
     debug_assert!(fp_rate > 0.0 && fp_rate < 1.0);
@@ -169,7 +159,6 @@ fn optimal_bucket_count(items_count: usize, fp_rate: f64) -> usize {
 // = items_count * (ln100 - ln(fp_rate100)) / (ln2) ^ 2
 // < items_count * (5 - 1) / 0. 5 ^ 2
 // = items_count * 16
-#[allow(unused)]
 pub const fn approximate_bucket_count(items_count: usize) -> usize {
     items_count * 16
 }

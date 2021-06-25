@@ -51,4 +51,4 @@ jobs:
       - name: Clippy check
         run: |
           rustup component add clippy
-          cargo clippy --all
+          cargo clippy --all --all-features

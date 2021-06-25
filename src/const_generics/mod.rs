@@ -25,19 +25,18 @@
 //! use rand::{random, thread_rng, Rng};
 //! use rand::distributions::Standard;
 //! use bloom_filters::{BloomFilter, ConstStableBloomFilter, DefaultBuildHashKernels, compute_word_num, stablefilter};
-//! fn main() {
-//!     // item count: 10
-//!     // bucket size: 3
-//!     // fp rate: 0.03
-//!     // bucket count = -10 * ln(0.03) / ln2 ^ 2 = 72.9844, we need to compute the bucket count by hand!
-//!     let mut filter = stablefilter!(
-//!        73, 3, 0.03, DefaultBuildHashKernels::new(random(), RandomState::new())
-//!     );
-//!     let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();
-//!     items.iter().for_each(|i| filter.insert(i));
-//!     let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();
-//!     let _ret: Vec<bool> = items.iter().map(|i| filter.contains(i)).collect();    
-//! }
+//! 
+//! // item count: 10
+//! // bucket size: 3
+//! // fp rate: 0.03
+//! // bucket count = -10 * ln(0.03) / ln2 ^ 2 = 72.9844, we need to compute the bucket count by hand!
+//! let mut filter = stablefilter!(
+//!   73, 3, 0.03, DefaultBuildHashKernels::new(random(), RandomState::new())
+//! );
+//! let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();
+//! items.iter().for_each(|i| filter.insert(i));
+//! let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();
+//! let _ret: Vec<bool> = items.iter().map(|i| filter.contains(i)).collect();    
 //! ```
 //!
 //! classic bloom filter example:
@@ -47,17 +46,16 @@
 //! use rand::distributions::Standard;
 //! use bloom_filters::{BloomFilter, ConstClassicBloomFilter, DefaultBuildHashKernels};
 //! use bloom_filters::{compute_word_num, approximate_bucket_count, classicfilter};
-//! fn main() {
-//!     // item count: 100
-//!     // fp rate: 0.03
-//!     let mut filter = classicfilter!(
-//!         100, 0.03, DefaultBuildHashKernels::new(random(), RandomState::new())
-//!     );
-//!     let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();
-//!     items.iter().for_each(|i| filter.insert(i));
-//!     let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();
-//!     let _ret: Vec<bool> = items.iter().map(|i| filter.contains(i)).collect();
-//! }
+//! 
+//! // item count: 100
+//! // fp rate: 0.03
+//! let mut filter = classicfilter!(
+//!     100, 0.03, DefaultBuildHashKernels::new(random(), RandomState::new())
+//! );
+//! let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();
+//! items.iter().for_each(|i| filter.insert(i));
+//! let items: Vec<usize> = thread_rng().sample_iter(&Standard).take(7).collect();
+//! let _ret: Vec<bool> = items.iter().map(|i| filter.contains(i)).collect();
 //! ```
 //!
 

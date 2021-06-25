@@ -14,7 +14,6 @@ pub struct Filter<BHK: BuildHashKernels, const W: usize> {
 impl<BHK: BuildHashKernels, const W: usize> Filter<BHK, W> {
     /// Creates a new Stable Bloom Filter with m buckets and d
     /// bits allocated per bucket optimized for the target false-positive rate.
-    #[allow(unused)]
     pub fn new(bucket_count: usize, bucket_size: u8, fp_rate: f64, build_hash_kernels: BHK) -> Self {
         let mut k = compute_k_num(fp_rate);
         if k > bucket_count {
@@ -33,7 +32,6 @@ impl<BHK: BuildHashKernels, const W: usize> Filter<BHK, W> {
         }
     }
 
-    #[allow(unused)]
     pub fn buckets(&self) -> &ConstBuckets<W> {
         &self.buckets
     }

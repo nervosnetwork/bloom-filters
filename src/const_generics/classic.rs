@@ -12,7 +12,6 @@ impl<BHK: BuildHashKernels, const W: usize> Filter<BHK, W> {
     /// Create a new bloom filter structure.
     /// items_count is an estimation of the maximum number of items to store.
     /// fp_rate is the wanted rate of false positives, in ]0.0, 1.0[
-    #[allow(unused)]
     pub fn new(items_count: usize, fp_rate: f64, build_hash_kernels: BHK) -> Self {
         let buckets = ConstBuckets::with_fp_rate(items_count, fp_rate, 1);
         let hash_kernels = build_hash_kernels.with_fp_rate(fp_rate, buckets.len());
@@ -25,7 +24,6 @@ impl<BHK: BuildHashKernels, const W: usize> Filter<BHK, W> {
     //     Self { buckets, hash_kernels }
     // }
 
-    #[allow(unused)]
     pub fn buckets(&self) -> &ConstBuckets<W> {
         &self.buckets
     }
